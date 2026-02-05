@@ -10,7 +10,6 @@ import {
 } from "../components/ui/card";
 import ReactMarkdown from "react-markdown";
 
-
 interface ChatMessage {
   sender: "user" | "agent";
   text: string;
@@ -79,13 +78,15 @@ const ChatApp: React.FC = () => {
   };
 
   return (
-    <Card className="max-w-2xl mx-auto mt-10 shadow bg-white dark:bg-gray-800">
-      <CardHeader className="bg-gray-50 dark:bg-gray-900">
-        <CardTitle className="text-4xl dark:text-white text-center">AI Frontend Principles Chat</CardTitle>
+    <Card className="max-w-2xl mx-auto mt-10 shadow">
+      <CardHeader className="border-b">
+        <CardTitle className="text-4xl text-center text-foreground">
+          AI Frontend Principles Chat
+        </CardTitle>
       </CardHeader>
       <CardContent
         ref={chatContainerRef}
-        className="h-96 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 space-y-4"
+        className="h-96 overflow-y-auto bg-muted/40 p-4 space-y-4"
       >
         {messages.map((msg, index) => (
           <div
@@ -94,14 +95,14 @@ const ChatApp: React.FC = () => {
               msg.sender === "user" ? "items-end" : "items-start"
             }`}
           >
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {msg.sender === "user" ? "You" : "Agent"}
             </span>
             <p
               className={`px-4 py-2 rounded-md ${
                 msg.sender === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground border border-border"
               }`}
             >
               <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -109,18 +110,18 @@ const ChatApp: React.FC = () => {
           </div>
         ))}
         {isLoading && (
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-center text-sm text-muted-foreground">
             Loading response...
           </p>
         )}
       </CardContent>
-      <CardFooter className="flex gap-2 p-4 bg-gray-50 dark:bg-gray-900">
+      <CardFooter className="flex gap-2 p-4 border-t bg-card">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your question or message regarding Frontend principles..."
-          className="flex-1"
+          className="flex-1 bg-background"
         />
         <Button onClick={sendMessage} disabled={isLoading}>
           Send

@@ -23,7 +23,7 @@ import "dotenv/config";
 export async function callAgent(
   client: MongoClient,
   query: string,
-  thread_id: string
+  thread_id: string,
 ): Promise<string> {
   // 1. Connect to the "frontend_db" and the "principles" collection
   const db = client.db("frontend_db");
@@ -45,15 +45,15 @@ export async function callAgent(
       // Set up the vector store using the "principles" collection
       const dbConfig = {
         collection,
-        indexName: "vector_index",       // Must match how you seeded the collection
-        textKey: "embedding_text",       // Must match how you seeded the collection
-        embeddingKey: "embedding",       // Must match how you seeded the collection
+        indexName: "vector_index", // Must match how you seeded the collection
+        textKey: "embedding_text", // Must match how you seeded the collection
+        embeddingKey: "embedding", // Must match how you seeded the collection
       };
 
       // Create the vector store
       const vectorStore = new MongoDBAtlasVectorSearch(
         new OpenAIEmbeddings(), // Using OpenAI embeddings
-        dbConfig
+        dbConfig,
       );
 
       // Perform a similarity search
@@ -62,16 +62,21 @@ export async function callAgent(
     },
     {
       name: "principle_lookup",
-      description: "Searches the 'frontend_db.principles' collection for relevant frontend principles.",
+      description:
+        "Searches the 'frontend_db.principles' collection for relevant frontend principles.",
       schema: z.object({
-        query: z.string().describe("The search query (e.g., a question about frontend design)."),
+        query: z
+          .string()
+          .describe(
+            "The search query (e.g., a question about frontend design).",
+          ),
         n: z
           .number()
           .optional()
           .default(3)
           .describe("Number of results to return from the search."),
       }),
-    }
+    },
   );
 
   // Gather all the tools in an array
@@ -82,8 +87,12 @@ export async function callAgent(
 
   // 5. Create an Anthropic model and bind the tools to it
   const model = new ChatAnthropic({
-    model: "claude-3-5-sonnet-20240620", // or "claude-1.3" / "claude-2.0" / "claude-instant" etc.
-    temperature: 0,
+    model: "claude-sonnet-4-5-20250929", // or "claude-1.3" / "claude-2.0" / "claude-instant" etc.
+    temperature: 0.1,
+    // Workaround: @langchain/anthropic defaults topP to -1 (sent as top_p=-1),
+    // and this model rejects top_p=-1. Also, this model disallows specifying
+    // both temperature and top_p. So we *omit* top_p entirely.
+    invocationKwargs: { top_p: undefined },
   }).bindTools(tools);
 
   // 6. Define a function to decide the next node: either go to tools or end
@@ -131,11 +140,11 @@ Current time: {time}.`,
 
   // 8. Build the state graph
   const workflow = new StateGraph(GraphState)
-    .addNode("agent", callModel)       // The node that calls the LLM
-    .addNode("tools", toolNode)        // The node that executes tool calls
-    .addEdge("__start__", "agent")     // Start by calling the LLM
+    .addNode("agent", callModel) // The node that calls the LLM
+    .addNode("tools", toolNode) // The node that executes tool calls
+    .addEdge("__start__", "agent") // Start by calling the LLM
     .addConditionalEdges("agent", shouldContinue) // Decide whether to go to tools or end
-    .addEdge("tools", "agent");        // After using tools, go back to the LLM
+    .addEdge("tools", "agent"); // After using tools, go back to the LLM
 
   // 9. Use a MongoDBSaver to persist the conversation state (thread-based memory)
   const checkpointer = new MongoDBSaver({
@@ -151,11 +160,12 @@ Current time: {time}.`,
     {
       messages: [new HumanMessage(query)],
     },
-    { recursionLimit: 15, configurable: { thread_id } }
+    { recursionLimit: 15, configurable: { thread_id } },
   );
 
   // 12. Log or return the final AI message
-  const lastMessage = finalState.messages[finalState.messages.length - 1].content;
+  const lastMessage =
+    finalState.messages[finalState.messages.length - 1].content;
   console.log("Agent final message:", lastMessage);
 
   return lastMessage as string;
