@@ -7,7 +7,7 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
 - **LangGraph Integration:** Manages agentic conversational flows in TypeScript. 🔄
 - **MongoDB Atlas:** Stores and retrieves conversation data.☁️🗄️
 - **RESTful API:** Built with Express.js for handling chat interactions.🌐
-- **AI Integration:** Utilizes OpenAI's GPT model and Anthropic's API for generating responses.🤖🧠
+- **AI Integration:** Utilizes OpenAI embeddings + Google's Gemini for generating responses.🤖🧠
 - **Frontend Principles Lookup**: Implements MongoDB Atlas vector search for retrieving and discussing frontend design principles. 🔍🎨
 
 ## Prerequisites
@@ -15,7 +15,7 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
 - [Node.js](https://nodejs.org/) and npm
 - A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account
 - OpenAI API key
-- Anthropic API key
+- Google AI (Gemini) API key
 
 ## Installation 🛠️
 
@@ -38,7 +38,7 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
 
     ```bash
     OPENAI_API_KEY=your_openai_api_key_here
-    ANTHROPIC_API_KEY=your_anthropic_api_key_here
+    GOOGLE_API_KEY=your_gemini_api_key_here
     MONGODB_ATLAS_URI=your_mongodb_atlas_uri_here
     ```
 

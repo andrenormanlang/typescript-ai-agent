@@ -1,4 +1,4 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import { MongoClient } from "mongodb";
@@ -16,7 +16,7 @@ import { z } from "zod";
 import "dotenv/config";
 
 /**
- * This agent uses Anthropic (ChatAnthropic) with LangGraph's StateGraph
+ * This agent uses Gemini (ChatGoogleGenerativeAI) with LangGraph's StateGraph
  * to query the "frontend_db.principles" collection in MongoDB.
  * It leverages a "principle_lookup" tool that uses MongoDBAtlasVectorSearch.
  */
@@ -25,6 +25,12 @@ export async function callAgent(
   query: string,
   thread_id: string,
 ): Promise<string> {
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error(
+      "Missing GOOGLE_API_KEY. Set it in backend/.env (this file is gitignored).",
+    );
+  }
+
   // 1. Connect to the "frontend_db" and the "principles" collection
   const db = client.db("frontend_db");
   const collection = db.collection("principles");
@@ -85,15 +91,22 @@ export async function callAgent(
   // 4. Create a ToolNode so the agent can call these tools
   const toolNode = new ToolNode<typeof GraphState.State>(tools);
 
-  // 5. Create an Anthropic model and bind the tools to it
-  const model = new ChatAnthropic({
-    model: "claude-sonnet-4-5-20250929", // or "claude-1.3" / "claude-2.0" / "claude-instant" etc.
+  // 5. Create a Gemini model and bind the tools to it
+  const geminiModelName =
+    process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview";
+
+  const modelWithTools = new ChatGoogleGenerativeAI({
+    model: geminiModelName,
     temperature: 0.1,
-    // Workaround: @langchain/anthropic defaults topP to -1 (sent as top_p=-1),
-    // and this model rejects top_p=-1. Also, this model disallows specifying
-    // both temperature and top_p. So we *omit* top_p entirely.
-    invocationKwargs: { top_p: undefined },
+    apiKey: process.env.GOOGLE_API_KEY,
   }).bindTools(tools);
+
+  // After we have tool output, force synthesis by disabling tools.
+  const modelNoTools = new ChatGoogleGenerativeAI({
+    model: geminiModelName,
+    temperature: 0.1,
+    apiKey: process.env.GOOGLE_API_KEY,
+  });
 
   // 6. Define a function to decide the next node: either go to tools or end
   function shouldContinue(state: typeof GraphState.State) {
@@ -131,8 +144,31 @@ Current time: {time}.`,
       messages: state.messages,
     });
 
-    // Call the Anthropic model
-    const result = await model.invoke(formattedPrompt);
+    const hasToolResult = state.messages.some(
+      (m) => (m as { _getType?: () => string })._getType?.() === "tool",
+    );
+
+    // Call the Gemini model
+    const result = await (hasToolResult ? modelNoTools : modelWithTools).invoke(
+      formattedPrompt,
+    );
+
+    // Gemini 3 tool calling requires "thought signatures" to be preserved across
+    // tool-use turns. Some SDK layers (and older LangChain integrations) may drop
+    // these fields, which causes 400s on the follow-up request.
+    //
+    // The Gemini docs allow using the dummy signature "skip_thought_signature_validator"
+    // when a signature is unavailable.
+    const maybeToolCalls = (result as AIMessage).tool_calls;
+    if (maybeToolCalls?.length) {
+      const first = maybeToolCalls[0] as unknown as {
+        extra_content?: { google?: { thought_signature?: string } };
+      };
+      first.extra_content ??= {};
+      first.extra_content.google ??= {};
+      first.extra_content.google.thought_signature ??=
+        "skip_thought_signature_validator";
+    }
 
     // Return the new AI message so it gets appended to state
     return { messages: [result] };

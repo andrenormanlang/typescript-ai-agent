@@ -1,0 +1,54 @@
+diff --git a/node_modules/@langchain/google-genai/dist/utils/common.cjs b/node_modules/@langchain/google-genai/dist/utils/common.cjs
+index 7c0a6a9..fc2d264 100644
+--- a/node_modules/@langchain/google-genai/dist/utils/common.cjs
++++ b/node_modules/@langchain/google-genai/dist/utils/common.cjs
+@@ -321,13 +321,20 @@ function convertMessageContentToParts(message, isMultimodalModel, previousMessag
+             .filter((p) => p !== undefined));
+     }
+     if ((0, messages_1.isAIMessage)(message) && message.tool_calls?.length) {
+-        functionCalls = message.tool_calls.map((tc) => {
+-            return {
++        functionCalls = message.tool_calls.map((tc, i) => {
++            const part = {
+                 functionCall: {
+                     name: tc.name,
+                     args: tc.args,
+                 },
+             };
++            // Gemini 3 requires a thought signature on the first functionCall part
++            // for each tool-calling step. If we don't have a real signature, use
++            // the documented dummy signature to skip validation.
++            if (i === 0) {
++                part.thoughtSignature = "skip_thought_signature_validator";
++            }
++            return part;
+         });
+     }
+     return [...messageParts, ...functionCalls];
+diff --git a/node_modules/@langchain/google-genai/dist/utils/common.js b/node_modules/@langchain/google-genai/dist/utils/common.js
+index 24b0cc9..7baad54 100644
+--- a/node_modules/@langchain/google-genai/dist/utils/common.js
++++ b/node_modules/@langchain/google-genai/dist/utils/common.js
+@@ -312,13 +312,20 @@ export function convertMessageContentToParts(message, isMultimodalModel, previou
+             .filter((p) => p !== undefined));
+     }
+     if (isAIMessage(message) && message.tool_calls?.length) {
+-        functionCalls = message.tool_calls.map((tc) => {
+-            return {
++        functionCalls = message.tool_calls.map((tc, i) => {
++            const part = {
+                 functionCall: {
+                     name: tc.name,
+                     args: tc.args,
+                 },
+             };
++            // Gemini 3 requires a thought signature on the first functionCall part
++            // for each tool-calling step. If we don't have a real signature, use
++            // the documented dummy signature to skip validation.
++            if (i === 0) {
++                part.thoughtSignature = "skip_thought_signature_validator";
++            }
++            return part;
+         });
+     }
+     return [...messageParts, ...functionCalls];
