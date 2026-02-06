@@ -82,7 +82,7 @@ const ChatApp: React.FC = () => {
     <Card className="max-w-2xl mx-auto mt-10 shadow">
       <CardHeader className="border-b">
         <CardTitle className="text-4xl text-center text-foreground">
-          AI Frontend Principles Chat
+          AI Fullstack Principles Chat
         </CardTitle>
       </CardHeader>
       <CardContent
@@ -121,7 +121,7 @@ const ChatApp: React.FC = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your question or message regarding Frontend principles..."
+          placeholder="Type your question or message regarding Fullstack principles..."
           className="flex-1 bg-background"
         />
         <Button onClick={sendMessage} disabled={isLoading}>

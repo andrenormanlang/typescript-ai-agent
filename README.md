@@ -7,14 +7,13 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
 - **LangGraph Integration:** Manages agentic conversational flows in TypeScript. 🔄
 - **MongoDB Atlas:** Stores and retrieves conversation data.☁️🗄️
 - **RESTful API:** Built with Express.js for handling chat interactions.🌐
-- **AI Integration:** Utilizes OpenAI embeddings + Google's Gemini for generating responses.🤖🧠
-- **Frontend Principles Lookup**: Implements MongoDB Atlas vector search for retrieving and discussing frontend design principles. 🔍🎨
+- **AI Integration:** Utilises Google's Gemini for generating responses and embeddings.🤖🧠
+- **Fullstack Principles Lookup**: Implements MongoDB Atlas vector search for retrieving and discussing fullstack engineering principles. 🔍🧱
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) and npm
 - A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account
-- OpenAI API key
 - Google AI (Gemini) API key
 
 ## Installation 🛠️
@@ -37,20 +36,27 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
     Create a `.env` file in the root directory and add the following:
 
     ```bash
-    OPENAI_API_KEY=your_openai_api_key_here
     GOOGLE_API_KEY=your_gemini_api_key_here
     MONGODB_ATLAS_URI=your_mongodb_atlas_uri_here
+    ```
+
+    Optional:
+
+    ```bash
+    GEMINI_MODEL=gemini-3-flash-preview
+    GEMINI_EMBEDDING_MODEL=embedding-001
     ```
 
 4. **Seeding the Database:**
 
     ```bash
-    npx ts-node database-seed.ts
+  cd backend
+  npx ts-node database-seed.ts
     ```
 
 5. **Atlas Vector Search Indexing:**
 
-    Go to your MongoDB Atlas dashboard and create a new vector search index for the `frontend_db.principles` collection as a JSON editor.
+  Go to your MongoDB Atlas dashboard and create a new vector search index for the `fullstack_db.principles` collection as a JSON editor.
 
     Index Name: vector_index
 
@@ -60,7 +66,7 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
     {
       "fields": [
         {
-          "numDimensions": 1536,
+          "numDimensions": 768,
           "path": "embedding",
           "similarity": "cosine",
           "type": "vector"
@@ -69,7 +75,10 @@ This project showcases how to integrate LangGraph with MongoDB for building and 
     }
     ```
 
-    This index will be used for retrieving frontend design principles based on their embeddings.
+    This index will be used for retrieving fullstack principles based on their embeddings.
+
+    Note: if you change `GEMINI_EMBEDDING_MODEL`, the embedding dimension may change.
+    The seed script logs the actual embedding length it gets from Gemini—match `numDimensions` to that value.
 
 ## Usage ▶️
 
@@ -116,13 +125,13 @@ curl -X POST \
 
 ## Project Structure 📁
 
-- index.ts: Entry point for the Express.js server and API routes.
-- agent.ts: Defines the LangGraph agent, its tools and the conversation flow.
-- seed-database.ts: Script for seeding the MongoDB Atlas database with employee data.
+- backend/index.ts: Entry point for the Express.js server and API routes.
+- backend/agent.ts: Defines the LangGraph agent, its tools and the conversation flow.
+- backend/database-seed.ts: Script for seeding MongoDB Atlas with synthetic fullstack principles + embeddings.
 
 ## How it Works ⚙️
 
-- **Data Seeding**:  The seed-database.ts script generates synthetic employee data and populates the MongoDB database. 🌱
+- **Data Seeding**: The backend/database-seed.ts script generates synthetic fullstack principles and populates MongoDB with embeddings for Atlas Vector Search. 🌱
 - **LangGraph Agent**: Defined in agent.ts, it manages the conversation graph structure and integrates the necessary tools. 🔧
 - **Database Integration**: MongoDB operations are directly integrated into the agent for storing and retrieving conversation data. 💾
 - **API Endpoints**: The Express server in index.ts provides endpoints for starting and continuing conversations. 📡
